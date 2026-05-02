@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Farm Monitoring System</title>
+    <link rel="stylesheet" type="text/css"  href="/css/style.css">
+</head>
+<body>
+
+<video id="video" autoplay ></video>
+<div id="title"><h1>Smart Farm Monitoring System</h1></div>
+<div id="subtitle"><h2>Warning</h2></div>
+<div id="infor">
+    <b>Dữ liệu cảm biến:</b><p></p>
+    <p>- Nhiệt độ:</p><span id="Temperature">--</span>
+    <p>- Độ ẩm không khí:</p><span id="Humidity">--</span>
+    <p>- Ánh sáng:</p><span id="Light">--</span>
+    <p>- Độ ẩm đất:</p><span id="soilMoisture">--</span>
+</div>
+
+<div id="areaControl" onClick= "openControlPanel(0)" >
+<div id="remote" onClick= "openControlPanel(1,event)">
+    <p>Remote</p>
+</div>
+</div>
+<div id="suggestion">
+    <b>Gợi ý bởi AI:</b>
+    <div id="suggestionContent"></div>
+</div>
+
+<div id="control">
+    <h2>Điều khiển:</h2>
+    <hr>
+    <div id="switches">
+        <div>
+            <p>Bật/Tắt nhanh:</p>
+            <label class="switch">
+            <input type="checkbox" id="all">
+            <span class="slider"></span>
+            </label>
+        </div>
+        <div>
+            <p>Cửa sổ trời:</p>
+            <label class="switch">
+            <input type="checkbox" id="roof">
+            <span class="slider"></span>
+            </label>
+        </div>
+        <div>
+            <p>Tưới nước:</p>
+            <label class="switch">
+            <input type="checkbox" id="water">
+            <span class="slider"></span>
+            </label>
+        </div>
+        <div>
+            <p>Đèn:</p>
+            <label class="switch">
+            <input type="checkbox" id="lightBulb">
+            <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+        document.getElementById("video").srcObject = stream;
+    })
+    .catch(function(error) {
+        console.log("Không mở được camera", error);
+    });
+
+    function openControlPanel(flag, event){
+
+    const control = document.getElementById("control");
+
+    if(event) event.stopPropagation();
+
+    if(flag == 1){
+        control.style.opacity = 1;
+        control.style.pointerEvents = "auto";
+    }
+    else{
+        control.style.opacity = 0;
+        control.style.pointerEvents = "none";
+    }
+}
+    // Hàm tải dữ liệu cảm biến từ API: "/sensor-data"
+    function loadSensorData() {
+        fetch("/sensor-data")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("Temperature").innerText = data.temperature;
+                document.getElementById("Humidity").innerText = data.humidity;
+                document.getElementById("Light").innerText = data.light;
+                document.getElementById("soilMoisture").innerText = data.soilMoisture;
+            })
+            .catch(err => console.error("Fetch error:", err));
+    }
+
+    // gọi lần đầu
+    loadSensorData();
+
+    // gọi lặp lại mỗi 2 giây
+    setInterval(loadSensorData, 2000);
+    
+    // Hàm gửi MQTT
+    function sendMultipleControls(devices) {
+
+        fetch("/sensor-control", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(devices)
+        })
+        .then(res => res.text())
+        .then(data => console.log("Server:", data))
+        .catch(err => console.error(err));
+    }
+
+    // Hàm delay để tránh gửi quá nhiều yêu cầu khi người dùng thay đổi nhanh các switch
+    function debounce(func, delay) {
+        let timer;
+
+        return function (...args) {
+            clearTimeout(timer);
+
+            timer = setTimeout(() => {
+                func.apply(this, args);
+            }, delay);
+        };
+    }
+
+    // Hàm delay trước khi gửi MQTT
+    const sendControlDebounced = debounce(() => {
+        sendMultipleControls(collectDevices());
+    }, 1000);
+
+    
+    // bắt sự kiện switch
+    function collectDevices(){
+
+        const devices = {};
+        
+        document.querySelectorAll("#switches input[type=checkbox]:not(#all)")
+        .forEach(sw => {
+            devices[sw.id] = sw.checked ? 1 : 0;
+        });
+        
+        return devices;
+    }
+    
+    // gửi dữ liệu đến hàm delay
+    document.querySelectorAll("#switches input[type='checkbox']").forEach(sw => {
+        sw.addEventListener("change", function () {
+            sendControlDebounced();
+        });
+    });
+    
+    //Xử lý việc đồng bộ giữa các nút điều khiển Acurator và nút all
+    const allSwitch = document.getElementById("all");
+    const switches = document.querySelectorAll("#switches input[type='checkbox']:not(#all)");
+
+    // Khi bật/tắt ALL
+    allSwitch.addEventListener("change", function () {
+        switches.forEach(sw => {
+            sw.checked = allSwitch.checked;
+        });
+    });
+
+    // Khi thay đổi từng switch con
+    switches.forEach(sw => {
+        sw.addEventListener("change", function () {
+            // Kiểm tra xem tất cả có đang bật không
+            const allChecked = [...switches].every(s => s.checked);
+
+            // Nếu tất cả bật -> ALL bật
+            // Nếu có ít nhất 1 cái tắt -> ALL tắt
+            allSwitch.checked = allChecked;
+        });
+    });
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //XỬ lý sự kiện cho nút tự động điều khiển bằng AI
+    // const autoSwitch = document.getElementById("automation");
+
+    // allSwitch.addEventListener("change", function () {
+    //     if (allSwitch.checked) {
+    //         loadControlData();
+    //         // gọi lặp lại mỗi 2 giây
+    //         setInterval(loadControlData, 2000);
+    //     }
+    // });
+    // const roof = document.getElementById("roof").checked; 
+    // const water = document.getElementById("water").checked; 
+    // const lightBulb = document.getElementById("lightBulb").checked; 
+
+    // // Hàm tải dữ liệu cảm biến từ API: "/control-data"
+    // function loadControlData() {
+    //     fetch("/control-data")
+    //         .then(res => res.json())
+    //         .then(data => {
+    //             roof = data.roof;
+    //             water = data.water;
+    //             lightBulb = data.lightBulb;
+    //         })
+    //         .catch(err => console.error("Fetch error:", err));
+    //     sendControlDebounced();
+    // }
+
+</script>
+
+</body>
+</html>
