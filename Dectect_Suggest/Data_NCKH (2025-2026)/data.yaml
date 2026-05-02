@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['healthy', 'leaf_blight', 'leaf_rust', 'leaf_spot', 'powdery_mildew']
+
+roboflow:
+  workspace: thien-yj6tx
+  project: plant-disease-detection-npnwd
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/thien-yj6tx/plant-disease-detection-npnwd/dataset/1
