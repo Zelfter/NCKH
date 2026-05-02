@@ -1,0 +1,9 @@
+ultralytics
+opencv-python
+numpy
+fastapi
+uvicorn
+python-multipart
+requests
+paho-mqtt
+python-dotenv
