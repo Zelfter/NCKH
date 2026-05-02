@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farm AI - HaUI NCKH</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <div class="video-wrapper">
+            <!-- <img src="http://localhost:8000/video_feed" id="video-stream" alt="AI Camera Tracking"> -->
+            <img src="http://192.168.1.209:8000/video_feed" id="video-stream" alt="AI Camera Tracking">
+            
+            <div class="iot-overlay">
+                <h3><i class="fas fa-microchip"></i> THÔNG SỐ IOT</h3>
+                <div class="stat-item">
+                    <span>Nhiệt độ:</span>
+                    <strong id="val-temp">--°C</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Độ ẩm KK:</span>
+                    <strong id="val-humid">--%</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Độ ẩm đất:</span>
+                    <strong id="val-soil">--</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Ánh sáng:</span>
+                    <strong id="val-light">--</strong>
+                </div>
+                <div class="device-tag">ID: <span id="device-id">esp32-01</span></div>
+            </div>
+
+            <div class="camera-controls">
+                <button id="toggle-cam-btn" class="btn-cam off" onclick="toggleCamera()">
+                    <i class="fas fa-video-slash"></i> <span>Bật Camera</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="recommendation-bar" id="rec-box">
+            <div class="rec-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="rec-content">
+                <p class="rec-label">Hệ chuyên gia phân tích:</p>
+                <p class="rec-text" id="recommendation-text">Đang đồng bộ dữ liệu AI & IoT...</p>
+            </div>
+            <div class="timestamp" id="timestamp">--:--:--</div>
+        </div>
+    </div>
+
+    <div id="areaControl" onclick="openControlPanel(0)">
+        
+        <div id="control" onclick="event.stopPropagation()">
+            <h2>Điều khiển</h2>
+            <hr><br>
+            <div id="switches">
+                <div class="switch-item">
+                    <span>Bật/Tắt nhanh</span>
+                    <label class="switch">
+                        <input type="checkbox" id="all">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-item">
+                    <span>Cửa sổ trời</span>
+                    <label class="switch">
+                        <input type="checkbox" id="roof">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-item">
+                    <span>Tưới nước</span>
+                    <label class="switch">
+                        <input type="checkbox" id="water">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-item">
+                    <span>Đèn</span>
+                    <label class="switch">
+                        <input type="checkbox" id="lightBulb">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Nút mở -->
+    <div id="remote" onclick="openControlPanel(1, event)">
+        <p>Remote</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
